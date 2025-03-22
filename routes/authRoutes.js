@@ -23,9 +23,7 @@ router.post('/signup', async (req, res) => {
 
     // Validate email format
     if (!email.match(/^[^\s@]+@[^\s@]+\.com$/)) {
-      return res.status(400).json({ 
-        message: 'Invalid email format. Must end with .com' 
-      });
+      return res.status(400).json({ message: 'Invalid email format' });
     }
 
     // Check if all required fields are present
@@ -44,24 +42,22 @@ router.post('/signup', async (req, res) => {
 
     const missingFields = requiredFields.filter(field => !req.body[field]);
     if (missingFields.length > 0) {
-      return res.status(400).json({ 
-        error: `Missing required fields: ${missingFields.join(', ')}` 
-      });
+      return res.status(400).json({ message: `Missing required fields: ${missingFields.join(', ')}` });
     }
 
     // Check for existing email
     const existingEmail = await User.findOne({ email });
     if (existingEmail) {
-      return res.status(400).json({ message: 'Email already registered' });
+      return res.status(400).json({ message: 'Email already exists' });
     }
 
     // Check for existing phone number
     const existingPhone = await User.findOne({ phoneNumber });
     if (existingPhone) {
-      return res.status(400).json({ message: 'Phone number already registered' });
+      return res.status(400).json({ message: 'Phone number already exists' });
     }
 
-    // Create new user with all fields
+    // Create new user with initialWeight set to the signup weight
     const user = new User({ 
       firstName, 
       lastName, 
@@ -70,6 +66,7 @@ router.post('/signup', async (req, res) => {
       course,
       height: parseFloat(height),
       weight: parseFloat(weight),
+      initialWeight: parseFloat(weight), // Add this line
       gender,
       age: parseInt(age),
       phoneNumber

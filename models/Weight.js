@@ -14,7 +14,7 @@ const WeightSchema = new mongoose.Schema({
         type: Number,
         required: true,
         max: [500, 'Weight cannot exceed 500 kg'],
-        min: [0, 'Weight cannot be negative']
+        min: [40, 'Weight cannot be less than 40 kg']
     },
     date: {
         type: Date,

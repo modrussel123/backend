@@ -1,6 +1,7 @@
 const Workout = require('../models/Workout'); 
 const User = require('../models/User');
 const { JWT_SECRET } = require('../config/jwt.config');
+const CompletedWorkout = require('../models/CompletedWorkout');
 
 exports.getWorkouts = async (req, res) => {
     try {
@@ -124,5 +125,63 @@ exports.deleteWorkout = async (req, res) => {
             return res.status(400).json({ error: "Invalid workout ID" });
         }
         res.status(500).json({ error: "Error deleting workout" });
+    }
+};
+
+// Add this new function to handle workout completion
+exports.completeWorkout = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const user = await User.findById(userId);
+        
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const workout = await Workout.findById(req.params.id);
+        if (!workout || workout.userEmail !== user.email) {
+            return res.status(404).json({ error: 'Workout not found or unauthorized' });
+        }
+
+        const completedWorkout = new CompletedWorkout({
+            userEmail: user.email,
+            workoutId: workout._id,
+            name: workout.name,
+            description: workout.description,
+            category: workout.category,
+            target: workout.target,
+            exerciseName: workout.exerciseName,
+            weightLifted: workout.category === 'Bodyweight' ? user.weight : workout.weight,
+            setsCompleted: workout.sets,
+            repsCompleted: workout.reps,
+            completedDate: new Date()
+        });
+
+        await completedWorkout.save();
+        
+        res.status(200).json({ 
+            message: "Workout marked as completed", 
+            completedWorkout 
+        });
+    } catch (error) {
+        console.error("Error completing workout:", error);
+        res.status(500).json({ error: "Error marking workout as completed" });
+    }
+};
+
+// Add endpoint to get completed workouts
+exports.getCompletedWorkouts = async (req, res) => {
+    try {
+        const user = req.user;
+        if (!user) {
+            return res.status(401).json({ error: "Authentication required" });
+        }
+
+        const completedWorkouts = await CompletedWorkout.find({ userEmail: user.email })
+            .sort({ completedDate: -1 });
+        res.status(200).json(completedWorkouts);
+    } catch (error) {
+        console.error("Error fetching completed workouts:", error);
+        res.status(500).json({ error: "Server error" });
     }
 };

@@ -29,8 +29,14 @@ const UserSchema = new mongoose.Schema({
   },
   weight: { 
     type: Number, 
-    required: true,
-    min: [30, 'Weight cannot be less than 30 kg'],
+    required: [true, 'Current weight is required'],
+    min: [40, 'Weight cannot be less than 40 kg'],
+    max: [500, 'Weight cannot exceed 500 kg']
+  },
+  initialWeight: { 
+    type: Number, 
+    required: [true, 'Initial weight is required'],
+    min: [40, 'Weight cannot be less than 40 kg'],
     max: [500, 'Weight cannot exceed 500 kg']
   },
   gender: { 
@@ -47,10 +53,10 @@ const UserSchema = new mongoose.Schema({
   phoneNumber: { 
     type: String, 
     required: true,
-    unique: true, // Add unique constraint
+    unique: true, 
     validate: {
       validator: function(v) {
-        return /^\+639\d{9}$/.test(v); // Must start with +639
+        return /^\+639\d{9}$/.test(v); 
       },
       message: props => `${props.value} is not a valid Philippine phone number! Must start with +639`
     }
@@ -61,7 +67,7 @@ const UserSchema = new mongoose.Schema({
   },
   isPrivate: {
     type: Boolean,
-    default: false,  // default to public
+    default: false,  
     required: true
   }
 });
@@ -70,6 +76,14 @@ const UserSchema = new mongoose.Schema({
 UserSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
   this.password = await bcrypt.hash(this.password, 10);
+  next();
+});
+
+// Add this pre-save middleware to set initialWeight
+UserSchema.pre('save', function(next) {
+  if (this.isNew) {
+    this.initialWeight = this.weight;
+  }
   next();
 });
 
